@@ -56,6 +56,7 @@
                             <th>Slug Url</th>
                             <th>Description</th>
                             <th>Price</th>
+                            <th>Image</th>
                             <th width="10%">Action</th>
                         </tr>
                     </thead>
@@ -116,6 +117,10 @@
                     {
                         data: 'price',
                         name: 'price',
+                    },
+                    {
+                        data: 'image',
+                        name: 'image',
                     },
                     {
                         data: 'action',
@@ -232,31 +237,33 @@
                 cancelButtonColor: '#3085d6',
                 confirmButtonText: 'Yes'
             }).then((result) => {
-                $.ajax({
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
-                    type: "DELETE",
-                    url: "products/" + id,
-                    dataType: 'json',
-                    success: function(response) {
-                        $('#productModal').modal('hide');
+                if (result.value) {
+                    $.ajax({
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        type: "DELETE",
+                        url: "products/" + id,
+                        dataType: 'json',
+                        success: function(response) {
+                            $('#productModal').modal('hide');
 
-                        $('#tableProduct').DataTable().ajax.reload();
+                            $('#tableProduct').DataTable().ajax.reload();
 
-                        Swal.fire({
-                            title: "Good job!",
-                            text: response.message,
-                            icon: "success",
-                            showConfirmButton: false,
-                            timer: 1500
-                        });
-                    },
-                    error: function(jqXHR, textStatus, errorThrown) {
-                        console.log(jqXHR.responseText);
-                        alert(jqXHR.responseText);
-                    }
-                })
+                            Swal.fire({
+                                title: "Good job!",
+                                text: response.message,
+                                icon: "success",
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            console.log(jqXHR.responseText);
+                            alert(jqXHR.responseText);
+                        }
+                    })
+                }
             })
         }
     </script>

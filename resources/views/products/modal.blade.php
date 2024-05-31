@@ -23,6 +23,11 @@
                 <input type="text" name="price" class="form-control" id="price">
             </div>
 
+            <div class="mb-3">
+                <label for="image">Image (Max 2MB)</label>
+                <input type="file" name="image" class="form-control" id="image" accept="image/jpg,image/jpeg,image/png,image/webp">
+            </div>
+
             <div class="float-end">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
               <button type="submit" class="btn btn-primary btnSubmit"></button>

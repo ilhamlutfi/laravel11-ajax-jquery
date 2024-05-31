@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product;
-use Illuminate\Support\Str;
-use Illuminate\Http\Request;
+use Exception;
+use App\Service\ImageService;
+use App\Service\ProductService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Contracts\View\View;
 use App\Http\Requests\ProductRequest;
-use Exception;
-use Illuminate\Http\JsonResponse;
-use Yajra\DataTables\Facades\DataTables;
+use App\Http\Requests\UpdateProductRequest;
 
 class ProductController extends Controller
 {
+    public function __construct(private ProductService $productService, private ImageService $imageService){}
+
     /**
      * Display a listing of the resource.
      */
@@ -28,11 +29,16 @@ class ProductController extends Controller
     {
         $data = $request->validated();
 
-        $data['uuid'] = Str::uuid();
-        $data['slug'] = Str::slug($data['name']);
-        Product::create($data);
+        try {
+            $uploadImg = $this->imageService->uploadImg($data);
+            $data['image'] = $uploadImg;
 
-        return response()->json(['title' => 'Good Job', 'text' => 'Product created successfully', 'icon' => 'success']);
+            $this->productService->create($data);
+
+            return response()->json(['title' => 'Good Job', 'text' => 'Product created successfully', 'icon' => 'success']);
+        } catch (Exception $error) {
+            return response()->json(['title' => 'Error', 'text' => $error->getMessage(), 'icon' => 'error']);
+        }
     }
 
     /**
@@ -42,7 +48,7 @@ class ProductController extends Controller
     {
         try {
             return response()->json([
-                'data' => Product::where('uuid', $id)->firstOrFail()
+                'data' => $this->productService->getByUid($id),
             ]);
         } catch (Exception $th) {
             //throw $th;
@@ -52,20 +58,22 @@ class ProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(ProductRequest $request, string $id)
+    public function update(UpdateProductRequest $request, string $id)
     {
         $data = $request->validated();
 
+        $getImage = $this->productService->getByUid($id);
+
         try {
-            $data['uuid'] = Str::uuid();
-            $data['slug'] = Str::slug($data['name']);
-            Product::where('uuid', $id)->update($data);
+            $uploadImg = $this->imageService->uploadImg($data, $getImage->image);
+            $data['image'] = $uploadImg;
+
+            $this->productService->update($data, $id);
 
             return response()->json(['title' => 'Good Job', 'text' => 'Product updated successfully', 'icon' => 'success']);
         } catch (Exception $error) {
             return response()->json(['title' => 'Error', 'text' => $error->getMessage(), 'icon' => 'error']);
         }
-
     }
 
     /**
@@ -73,24 +81,13 @@ class ProductController extends Controller
      */
     public function destroy(string $id)
     {
-        $product = Product::where('uuid', $id)->firstOrFail();
-        $product->delete();
+        $this->productService->delete($id);
 
         return response()->json(['message' => 'Product deleted successfully']);
     }
 
-    public function serversideTable(Request $request)
+    public function serversideTable(): JsonResponse
     {
-        $product = Product::get();
-
-        return DataTables::of($product)
-        ->addIndexColumn()
-        ->addColumn('action', function ($row) {
-            return '<div class="text-center">
-                        <button class="btn btn-sm btn-success" onclick="editModal(this)" data-id="' . $row->uuid . '">Edit</button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteModal(this)" data-id="' . $row->uuid . '">Delete</button>
-                    </div>';
-        })
-        ->make();
+        return $this->productService->getDatatable();
     }
 }
